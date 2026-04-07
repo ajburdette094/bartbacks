@@ -3,11 +3,779 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bartbacks</title>
+    <title>Bart Backs</title>
+    
+    <link rel="icon" href="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRoyoCo8zo1aM6HT-6HkCsENCeMb5RkrPG_Ag&s">
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #1a1a2e;
+            color: white;
+            font-family: 'Bangers', cursive;
+            overflow: hidden; 
+            user-select: none;
+        }
+
+        #gameArea {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            background: radial-gradient(circle, #3a3a5e 0%, #1a1a2e 100%);
+            overflow: hidden;
+        }
+
+        #world {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            transform-origin: center center;
+            transition: transform 0.2s ease-out;
+        }
+
+        #hud {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            z-index: 100;
+            display: none; 
+            pointer-events: none; 
+        }
+
+        .stats {
+            font-size: 32px;
+            text-shadow: 2px 2px 0 #000;
+            pointer-events: auto; 
+            background: rgba(0,0,0,0.5);
+            padding: 10px 20px;
+            border-radius: 10px;
+        }
+        .stats span { color: #f1c40f; }
+        .win-progress { font-size: 20px; color: #bdc3c7; margin-top: 5px;}
+
+        .right-nav {
+            pointer-events: auto;
+            display: flex;
+            gap: 10px;
+        }
+
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(0, 0, 0, 0.85);
+            z-index: 200;
+        }
+
+        #startScreen {
+            background-image: url('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSZmA63R5_GMRaxDvF-ZPOz24e05tYKMoZhjQ&s');
+            background-size: cover;
+            background-position: center;
+            background-color: #2c3e50; 
+        }
+
+        #winScreen { background-color: rgba(241, 196, 15, 0.9); }
+        #winScreen h1 { color: #fff; text-shadow: 5px 5px 0 #e67e22, -2px -2px 0 #000, 2px -2px 0 #000; }
+        #winScreen p { color: #000; font-weight: bold; }
+
+        h1 {
+            font-size: 100px;
+            color: #f1c40f;
+            margin: 0;
+            text-shadow: 5px 5px 0 #e74c3c, -2px -2px 0 #000, 2px -2px 0 #000;
+            letter-spacing: 5px;
+            text-align: center;
+        }
+
+        p.subtitle {
+            font-size: 30px;
+            color: #bdc3c7;
+            margin-bottom: 40px;
+            text-shadow: 2px 2px 0 #000;
+            text-align: center;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        button {
+            font-family: 'Bangers', cursive;
+            font-size: 35px;
+            padding: 10px 40px;
+            margin: 10px;
+            background-color: #e74c3c;
+            color: white;
+            border: 5px solid #fff;
+            border-radius: 15px;
+            cursor: pointer;
+            box-shadow: 0 8px 0 #c0392b;
+            transition: all 0.1s;
+        }
+
+        button:active { transform: translateY(8px); box-shadow: 0 0 0 #c0392b; }
+
+        button.small-btn { font-size: 25px; padding: 8px 25px; box-shadow: 0 6px 0 #c0392b; border: 4px solid #fff; margin: 5px;}
+        button.small-btn:active { transform: translateY(6px); box-shadow: 0 0 0 #c0392b; }
+        
+        button.shop-btn { background-color: #27ae60; box-shadow: 0 8px 0 #1e8449; }
+        button.shop-btn:active { box-shadow: 0 0 0 #1e8449; }
+        
+        button.ideas-btn { background-color: #8e44ad; box-shadow: 0 6px 0 #732d91; }
+        button.ideas-btn:active { box-shadow: 0 0 0 #732d91; }
+        
+        button.options-btn { background-color: #2980b9; box-shadow: 0 6px 0 #1c5982; }
+        button.options-btn:active { box-shadow: 0 0 0 #1c5982; }
+
+        button:disabled { background-color: #7f8c8d; box-shadow: 0 8px 0 #2c3e50; cursor: not-allowed; }
+
+        .bart {
+            position: absolute;
+            pointer-events: none;
+            transform-origin: center;
+            z-index: 50;
+        }
+
+        .bumper {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            background-image: url('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQbn6ciaca-lXsxF_WSEUiJbDqCuULBuxlPdA&s');
+            background-size: cover;
+            background-position: center;
+            border: 5px solid #fff;
+            border-radius: 50%;
+            box-shadow: 0 0 20px #e67e22;
+            transform: translate(-50%, -50%);
+            z-index: 40;
+            transition: box-shadow 0.1s, filter 0.1s;
+        }
+
+        #gameOverImg {
+            max-width: 300px;
+            border: 4px solid #fff;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        #startScreen, #shopScreen, #optionsScreen, #pauseScreen, #gameOverScreen, #winScreen { display: none; }
+        
+        .grid-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 1000px; 
+            margin-bottom: 20px;
+            overflow-y: auto;
+            max-height: 60vh;
+        }
+        .menu-item {
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px;
+            text-align: center;
+            width: 300px;
+        }
+        .menu-item h3 { margin: 0 0 10px 0; color: #f1c40f; font-size: 24px; }
+        .menu-item p { margin: 0 0 10px 0; font-family: 'Courier New', Courier, monospace; font-weight: bold;}
+
+        .passcode-input {
+            font-family: 'Bangers', cursive;
+            font-size: 50px;
+            text-align: center;
+            padding: 10px;
+            border: 5px solid #fff;
+            border-radius: 15px;
+            background-color: #2c3e50;
+            color: #f1c40f;
+            width: 200px;
+            margin-bottom: 20px;
+            letter-spacing: 10px;
+        }
+        .passcode-input:focus { outline: none; border-color: #e74c3c; box-shadow: 0 0 20px #e74c3c; }
+
+        ::-webkit-scrollbar { width: 10px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 5px; }
+        ::-webkit-scrollbar-thumb { background: #f1c40f; border-radius: 5px; }
+
+    </style>
 </head>
 <body>
-    <h1>Welcome to Bartbacks!</h1>
-    <p>This is a simple HTML file for the Bartbacks project.</p>
-    <p>Current Date and Time (UTC): 2026-04-07 00:59:26</p>
+
+    <div id="gameArea">
+        <div id="world"></div>
+        
+        <div id="hud">
+            <div class="stats">
+                <div>POINTS: <span id="pointsDisplay">0</span></div>
+                <div>BARTS LEFT: <span id="ammoDisplay">6</span></div>
+                <div class="win-progress">GOAL: <span id="winDisplay">0</span> / 500,000</div>
+            </div>
+            <div class="right-nav">
+                <button class="small-btn options-btn" onclick="openPause()">SETTINGS</button>
+                <button class="small-btn shop-btn" onclick="openShop()">SHOP</button>
+            </div>
+        </div>
+
+        <div id="passcodeScreen" class="screen">
+            <h1>RESTRICTED</h1>
+            <p class="subtitle">Enter access code to play</p>
+            <input type="password" id="passcodeInput" class="passcode-input" maxlength="4" autocomplete="off">
+            <button onclick="checkPasscode()">ENTER GAME</button>
+            <p id="passcodeError" style="color: #e74c3c; font-size: 30px; display: none; margin-top: 20px; text-shadow: 2px 2px 0 #000;">ACCESS DENIED!</p>
+        </div>
+
+        <div id="startScreen" class="screen">
+            <h1 style="background: rgba(0,0,0,0.6); padding: 0 20px; border-radius: 20px;">BART BACKS</h1>
+            <p class="subtitle" style="background: rgba(0,0,0,0.6); padding: 5px 20px; border-radius: 10px;">Click anywhere to drop and bounce! Reach 500k to WIN!</p>
+            
+            <button onclick="startGame()">PLAY GAME</button>
+            
+            <div class="button-group">
+                <button class="small-btn options-btn" onclick="openOptions()">DATA WIPE</button>
+                <button class="small-btn ideas-btn" onclick="openIdeas()">IDEAS?</button>
+            </div>
+        </div>
+
+        <div id="optionsScreen" class="screen">
+            <h1>SAVE DATA</h1>
+            <div class="grid-container">
+                <div class="menu-item">
+                    <h3>Wipe Save Data</h3>
+                    <p>Lose all points & upgrades.</p>
+                    <button class="small-btn" style="background-color: #c0392b;" onclick="resetProgress(false)">RESET ALL</button>
+                </div>
+            </div>
+            <button onclick="closeOptions()">BACK TO MENU</button>
+        </div>
+
+        <div id="pauseScreen" class="screen">
+            <h1>PAUSED</h1>
+            <p class="subtitle">Game Settings</p>
+            
+            <div class="grid-container">
+                <div class="menu-item">
+                    <h3>Camera Zoom</h3>
+                    <p>Adjust your view</p>
+                    <div style="display: flex; justify-content: center; align-items: center; gap: 10px;">
+                        <button class="small-btn" onclick="adjustZoom(-0.1)">-</button>
+                        <span id="zoomReadout" style="font-size: 24px; color: #f1c40f;">100%</span>
+                        <button class="small-btn" onclick="adjustZoom(0.1)">+</button>
+                    </div>
+                </div>
+            </div>
+            
+            <button onclick="closePause()">RESUME</button>
+            <button class="small-btn" style="background-color: #c0392b;" onclick="quitToMenu()">QUIT TO MENU</button>
+        </div>
+
+        <div id="gameOverScreen" class="screen">
+            <img id="gameOverImg" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR2jzRkqw9uFirB1nNynBdzzYJjb39EpQTcBg&s" alt="Game Over">
+            <h1>ALL BARTS FELL!</h1>
+            <p class="subtitle">Round Score: <span id="finalScore">0</span></p>
+            <button onclick="startGame()">PLAY AGAIN</button>
+            <button class="small-btn" onclick="quitToMenu()">MAIN MENU</button>
+        </div>
+
+        <div id="winScreen" class="screen">
+            <h1>YOU WIN!</h1>
+            <p class="subtitle">You reached the 500,000 Point Goal!</p>
+            <p style="color: #c0392b; font-size: 24px; margin-bottom: 20px;">(Your data has been reset for a new playthrough!)</p>
+            <img src="https://cartoon-clipart.co/amp/images/bart.png" style="width: 150px; margin-bottom: 20px;">
+            <button onclick="quitToMenu()">BACK TO MENU</button>
+        </div>
+
+        <div id="shopScreen" class="screen">
+            <h1>THE SHOP</h1>
+            <div style="font-size: 30px; color: #f1c40f; margin-bottom: 10px;">Bank: <span id="shopBank">0</span> Points</div>
+            
+            <div class="grid-container">
+                <div class="menu-item">
+                    <h3>Extra Ammo (+2)</h3>
+                    <p>Cost: 500 Points</p>
+                    <button class="small-btn" id="buyAmmoBtn" onclick="buyUpgrade('ammo')">BUY</button>
+                </div>
+                <div class="menu-item">
+                    <h3>Super Rubber</h3>
+                    <p>Cost: 1,500 Points</p>
+                    <button class="small-btn" id="buyBounceBtn" onclick="buyUpgrade('bounce')">BUY</button>
+                </div>
+                <div class="menu-item">
+                    <h3>Gold Bumpers (2x)</h3>
+                    <p>Cost: 5,000 Points</p>
+                    <button class="small-btn" id="buyMultiBtn" onclick="buyUpgrade('multi')">BUY</button>
+                </div>
+                <div class="menu-item">
+                    <h3>Big Barts</h3>
+                    <p>Cost: 10,000 Points</p>
+                    <button class="small-btn" id="buySizeBtn" onclick="buyUpgrade('size')">BUY</button>
+                </div>
+                <div class="menu-item">
+                    <h3>More Bumpers (+3)</h3>
+                    <p>Cost: 25,000 Points</p>
+                    <button class="small-btn" id="buyExtraBumpersBtn" onclick="buyUpgrade('extraBumpers')">BUY</button>
+                </div>
+                <div class="menu-item">
+                    <h3>Diamond (5x)</h3>
+                    <p>Cost: 50,000 Points</p>
+                    <button class="small-btn" id="buyDiamondBtn" onclick="buyUpgrade('diamond')">BUY</button>
+                </div>
+                <div class="menu-item">
+                    <h3>Magnet Bumpers</h3>
+                    <p>Barts are pulled to bumpers!</p>
+                    <p>Cost: 100,000 Points</p>
+                    <button class="small-btn" id="buyMagnetBtn" onclick="buyUpgrade('magnet')">BUY</button>
+                </div>
+                <div class="menu-item">
+                    <h3>Cloning Juice</h3>
+                    <p>10% chance to clone (Max 20/rnd)</p>
+                    <p>Cost: 250,000 Points</p>
+                    <button class="small-btn" id="buyCloneBtn" onclick="buyUpgrade('clone')">BUY</button>
+                </div>
+            </div>
+
+            <button onclick="closeShop()">RESUME GAME</button>
+        </div>
+
+    </div>
+
+    <script>
+        const bartImageLink = "https://cartoon-clipart.co/amp/images/bart.png";
+        const ideasFormLink = "https://forms.gle/RLbiPcikmhrQN3JB6";
+
+        const gameArea = document.getElementById('gameArea');
+        const world = document.getElementById('world');
+        const hud = document.getElementById('hud');
+        
+        const pointsDisplay = document.getElementById('pointsDisplay');
+        const ammoDisplay = document.getElementById('ammoDisplay');
+        const winDisplay = document.getElementById('winDisplay');
+        
+        const passcodeScreen = document.getElementById('passcodeScreen');
+        const passcodeInput = document.getElementById('passcodeInput');
+        const passcodeError = document.getElementById('passcodeError');
+        
+        const startScreen = document.getElementById('startScreen');
+        const optionsScreen = document.getElementById('optionsScreen');
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        const winScreen = document.getElementById('winScreen');
+        const shopScreen = document.getElementById('shopScreen');
+        const pauseScreen = document.getElementById('pauseScreen');
+        
+        const finalScoreDisplay = document.getElementById('finalScore');
+        const shopBank = document.getElementById('shopBank');
+        const zoomReadout = document.getElementById('zoomReadout');
+        
+        const buyAmmoBtn = document.getElementById('buyAmmoBtn');
+        const buyBounceBtn = document.getElementById('buyBounceBtn');
+        const buyMultiBtn = document.getElementById('buyMultiBtn');
+        const buySizeBtn = document.getElementById('buySizeBtn');
+        const buyExtraBumpersBtn = document.getElementById('buyExtraBumpersBtn');
+        const buyDiamondBtn = document.getElementById('buyDiamondBtn');
+        const buyMagnetBtn = document.getElementById('buyMagnetBtn');
+        const buyCloneBtn = document.getElementById('buyCloneBtn');
+
+        let isPlaying = false;
+        let isPaused = false;
+        let roundScore = 0;
+        let totalBank = 0;
+        let lifetimeScore = 0; 
+        const WIN_GOAL = 500000; 
+        
+        let bartsLeft = 6;
+        let barts = [];
+        let bumpers = [];
+        let animationId;
+        let currentZoom = 1.0;
+
+        let maxBarts = 6;
+        let ammoUpgrades = 0;
+        let bouncePower = -0.7; 
+        let bounceUpgrades = 0;
+        let pointMultiplier = 1;
+        let multiUpgrades = 0; 
+        let bartScale = 1;
+        let sizeUpgrades = 0;
+        let extraBumperUpgrades = 0;
+        
+        let hasMagnets = false;
+        let hasClones = false;
+        let clonesSpawnedThisRound = 0; // NEW: Track clones per round
+
+        function checkPasscode() {
+            if (passcodeInput.value === '6328') {
+                passcodeScreen.style.display = 'none';
+                startScreen.style.display = 'flex';
+            } else {
+                passcodeError.style.display = 'block';
+                passcodeInput.value = '';
+                setTimeout(() => { passcodeError.style.display = 'none'; }, 2000);
+            }
+        }
+
+        passcodeInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                checkPasscode();
+            }
+        });
+
+        const defaultBumperPositions = [
+            {x: 0.2, y: 0.3}, {x: 0.5, y: 0.2}, {x: 0.8, y: 0.3},
+            {x: 0.35, y: 0.5}, {x: 0.65, y: 0.5},
+            {x: 0.2, y: 0.7}, {x: 0.5, y: 0.8}, {x: 0.8, y: 0.7}
+        ];
+        
+        let currentBumperPositions = [...defaultBumperPositions];
+
+        function createBumpers() {
+            bumpers.forEach(b => b.el.remove());
+            bumpers = [];
+            currentBumperPositions.forEach(pos => {
+                const el = document.createElement('div');
+                el.className = 'bumper';
+                const x = window.innerWidth * pos.x;
+                const y = window.innerHeight * pos.y;
+                el.style.left = x + 'px';
+                el.style.top = y + 'px';
+                
+                if (pointMultiplier === 5) {
+                    el.style.boxShadow = '0 0 30px #00ffff';
+                    el.style.borderColor = '#00ffff';
+                } else if (pointMultiplier >= 2) {
+                    el.style.boxShadow = '0 0 30px #f1c40f';
+                }
+                
+                if (hasMagnets) {
+                    el.style.boxShadow = `0 0 50px ${pointMultiplier === 5 ? '#00ffff' : '#e74c3c'}`;
+                }
+
+                world.appendChild(el);
+                bumpers.push({ x, y, radius: 45, el });
+            });
+        }
+
+        function startGame() {
+            startScreen.style.display = 'none';
+            optionsScreen.style.display = 'none';
+            gameOverScreen.style.display = 'none';
+            winScreen.style.display = 'none';
+            shopScreen.style.display = 'none';
+            pauseScreen.style.display = 'none';
+            hud.style.display = 'flex';
+            
+            barts.forEach(b => b.el.remove());
+            barts = [];
+            
+            roundScore = 0;
+            clonesSpawnedThisRound = 0; // NEW: Reset clone tracker at the start of every round
+            bartsLeft = maxBarts;
+            isPlaying = true;
+            isPaused = false;
+            
+            updateUI();
+            createBumpers();
+
+            if (!animationId) gameLoop();
+        }
+
+        function quitToMenu() {
+            isPlaying = false;
+            isPaused = false;
+            barts.forEach(b => b.el.remove());
+            barts = [];
+            hud.style.display = 'none';
+            gameOverScreen.style.display = 'none';
+            shopScreen.style.display = 'none';
+            pauseScreen.style.display = 'none';
+            winScreen.style.display = 'none';
+            optionsScreen.style.display = 'none';
+            
+            startScreen.style.display = 'flex'; 
+            world.style.transform = `scale(1)`;
+        }
+
+        function triggerWin() {
+            isPlaying = false;
+            hud.style.display = 'none';
+            winScreen.style.display = 'flex';
+            resetProgress(true); 
+        }
+
+        function openIdeas() { window.open(ideasFormLink, '_blank'); }
+        function openOptions() { startScreen.style.display = 'none'; optionsScreen.style.display = 'flex'; }
+        function closeOptions() { optionsScreen.style.display = 'none'; startScreen.style.display = 'flex'; }
+
+        function openPause() {
+            isPaused = true;
+            hud.style.display = 'none';
+            pauseScreen.style.display = 'flex';
+        }
+        function closePause() {
+            pauseScreen.style.display = 'none';
+            hud.style.display = 'flex';
+            isPaused = false;
+        }
+
+        function adjustZoom(amount) {
+            currentZoom += amount;
+            if (currentZoom < 0.5) currentZoom = 0.5;
+            if (currentZoom > 1.5) currentZoom = 1.5;
+            
+            world.style.transform = `scale(${currentZoom})`;
+            zoomReadout.innerText = Math.round(currentZoom * 100) + '%';
+        }
+
+        function resetProgress(skipConfirm) {
+            if(skipConfirm || confirm("Are you sure? This will delete all your points and upgrades!")) {
+                totalBank = 0;
+                lifetimeScore = 0;
+                maxBarts = 6;
+                ammoUpgrades = 0;
+                bouncePower = -0.7; 
+                bounceUpgrades = 0;
+                pointMultiplier = 1;
+                multiUpgrades = 0;
+                bartScale = 1;
+                sizeUpgrades = 0;
+                extraBumperUpgrades = 0;
+                hasMagnets = false;
+                hasClones = false;
+                
+                currentBumperPositions = [...defaultBumperPositions]; 
+                updateUI();
+                
+                if(!skipConfirm) alert("Progress completely wiped!");
+            }
+        }
+
+        function openShop() {
+            isPaused = true;
+            hud.style.display = 'none';
+            shopScreen.style.display = 'flex';
+            updateUI();
+        }
+
+        function closeShop() {
+            shopScreen.style.display = 'none';
+            hud.style.display = 'flex';
+            isPaused = false;
+            createBumpers(); 
+        }
+
+        function buyUpgrade(type) {
+            if (type === 'ammo' && totalBank >= 500 && ammoUpgrades < 5) {
+                totalBank -= 500; maxBarts += 2; bartsLeft += 2; ammoUpgrades++;
+            } else if (type === 'bounce' && totalBank >= 1500 && bounceUpgrades < 3) {
+                totalBank -= 1500; bouncePower -= 0.1; bounceUpgrades++;
+            } else if (type === 'multi' && totalBank >= 5000 && multiUpgrades < 1) {
+                totalBank -= 5000; pointMultiplier = 2; multiUpgrades = 1;
+            } else if (type === 'size' && totalBank >= 10000 && sizeUpgrades < 2) {
+                totalBank -= 10000; bartScale += 0.5; sizeUpgrades++;
+            } else if (type === 'extraBumpers' && totalBank >= 25000 && extraBumperUpgrades < 1) {
+                totalBank -= 25000; extraBumperUpgrades++;
+                currentBumperPositions.push({x: 0.2, y: 0.5}, {x: 0.8, y: 0.5}, {x: 0.5, y: 0.5});
+            } else if (type === 'diamond' && totalBank >= 50000 && multiUpgrades < 2) {
+                totalBank -= 50000; pointMultiplier = 5; multiUpgrades = 2; 
+            } else if (type === 'magnet' && totalBank >= 100000 && !hasMagnets) {
+                totalBank -= 100000; hasMagnets = true;
+            } else if (type === 'clone' && totalBank >= 250000 && !hasClones) {
+                totalBank -= 250000; hasClones = true;
+            }
+            updateUI();
+        }
+
+        function updateUI() {
+            pointsDisplay.innerText = totalBank; 
+            ammoDisplay.innerText = bartsLeft;
+            shopBank.innerText = totalBank;
+            winDisplay.innerText = lifetimeScore;
+
+            buyAmmoBtn.disabled = totalBank < 500 || ammoUpgrades >= 5;
+            if (ammoUpgrades >= 5) buyAmmoBtn.innerText = "MAXED";
+
+            buyBounceBtn.disabled = totalBank < 1500 || bounceUpgrades >= 3;
+            if (bounceUpgrades >= 3) buyBounceBtn.innerText = "MAXED";
+
+            buyMultiBtn.disabled = totalBank < 5000 || multiUpgrades >= 1;
+            if (multiUpgrades >= 1) buyMultiBtn.innerText = "MAXED";
+
+            buySizeBtn.disabled = totalBank < 10000 || sizeUpgrades >= 2;
+            if (sizeUpgrades >= 2) buySizeBtn.innerText = "MAXED";
+
+            buyExtraBumpersBtn.disabled = totalBank < 25000 || extraBumperUpgrades >= 1;
+            if (extraBumperUpgrades >= 1) buyExtraBumpersBtn.innerText = "MAXED";
+
+            buyDiamondBtn.disabled = totalBank < 50000 || multiUpgrades >= 2;
+            if (multiUpgrades >= 2) buyDiamondBtn.innerText = "MAXED";
+            
+            buyMagnetBtn.disabled = totalBank < 100000 || hasMagnets;
+            if (hasMagnets) buyMagnetBtn.innerText = "OWNED";
+            
+            buyCloneBtn.disabled = totalBank < 250000 || hasClones;
+            if (hasClones) buyCloneBtn.innerText = "OWNED";
+        }
+
+        function endGame() {
+            isPlaying = false;
+            hud.style.display = 'none';
+            finalScoreDisplay.innerText = roundScore;
+            gameOverScreen.style.display = 'flex';
+        }
+
+        gameArea.addEventListener('mousedown', (e) => {
+            if (isPlaying && !isPaused && bartsLeft > 0 && e.target.tagName !== 'BUTTON') {
+                const rect = world.getBoundingClientRect();
+                let logicalX = (e.clientX - rect.left) / currentZoom;
+                
+                logicalX = Math.max(30, Math.min(window.innerWidth - 30, logicalX));
+                
+                bartsLeft--;
+                updateUI();
+                dropBart(logicalX, -100); 
+            }
+        });
+
+        function dropBart(x, y) {
+            const el = document.createElement('img');
+            el.src = bartImageLink;
+            el.className = 'bart';
+            
+            const bWidth = 60 * bartScale;
+            const bHeight = 120 * bartScale;
+            el.style.width = bWidth + 'px';
+            
+            world.appendChild(el);
+
+            barts.push({
+                el: el,
+                x: x - (bWidth / 2), 
+                y: y,    
+                vx: (Math.random() - 0.5) * 10,
+                vy: 0,
+                rotation: 0,
+                width: bWidth,
+                height: bHeight,
+                isDead: false
+            });
+        }
+
+        function gameLoop() {
+            if (isPlaying && !isPaused) {
+                const gravity = 0.4;
+                const friction = 0.99;
+
+                barts.forEach(b => {
+                    b.vy += gravity;
+                    b.vx *= friction;
+                    
+                    b.x += b.vx;
+                    b.y += b.vy;
+                    b.rotation += b.vx * 2; 
+
+                    if (b.x < 0) {
+                        b.x = 0;
+                        b.vx *= bouncePower;
+                    } else if (b.x + b.width > window.innerWidth) {
+                        b.x = window.innerWidth - b.width;
+                        b.vx *= bouncePower;
+                    }
+
+                    if (b.y + b.height > window.innerHeight) {
+                        b.el.remove(); 
+                        b.isDead = true; 
+                    }
+
+                    const centerX = b.x + b.width / 2;
+                    const centerY = b.y + b.height / 2;
+
+                    bumpers.forEach(bumper => {
+                        let closestX = Math.max(b.x, Math.min(bumper.x, b.x + b.width));
+                        let closestY = Math.max(b.y, Math.min(bumper.y, b.y + b.height));
+
+                        let dx = closestX - bumper.x;
+                        let dy = closestY - bumper.y;
+                        let distance = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (hasMagnets && distance < bumper.radius * 3) {
+                            let pullAngle = Math.atan2(bumper.y - centerY, bumper.x - centerX);
+                            b.vx += Math.cos(pullAngle) * 0.3;
+                            b.vy += Math.sin(pullAngle) * 0.3;
+                        }
+
+                        if (distance < bumper.radius) {
+                            let pts = 10 * pointMultiplier;
+                            roundScore += pts;
+                            totalBank += pts; 
+                            lifetimeScore += pts;
+                            
+                            updateUI();
+                            
+                            if (lifetimeScore >= WIN_GOAL) {
+                                b.isDead = true; 
+                                triggerWin();
+                            }
+
+                            bumper.el.style.filter = 'brightness(2) drop-shadow(0 0 20px white)';
+                            setTimeout(() => bumper.el.style.filter = 'none', 100);
+
+                            let bounceDx = centerX - bumper.x;
+                            let bounceDy = centerY - bumper.y;
+                            
+                            if (bounceDx === 0 && bounceDy === 0) { bounceDy = -1; bounceDx = 0.1; }
+
+                            const angle = Math.atan2(bounceDy, bounceDx);
+                            const speed = Math.sqrt(b.vx * b.vx + b.vy * b.vy);
+                            const newSpeed = Math.max(speed * 0.8, 15 + (bounceUpgrades * 2)); 
+                            
+                            b.vx = Math.cos(angle) * newSpeed;
+                            b.vy = Math.sin(angle) * newSpeed;
+                            
+                            b.x += Math.cos(angle) * 10;
+                            b.y += Math.sin(angle) * 10;
+                            
+                            // NEW: Enforce the 20 clone limit per round
+                            if (hasClones && Math.random() < 0.10 && clonesSpawnedThisRound < 20) {
+                                clonesSpawnedThisRound++;
+                                dropBart(b.x + b.width/2, b.y);
+                            }
+                        }
+                    });
+
+                    if (!b.isDead) {
+                        b.el.style.left = b.x + 'px';
+                        b.el.style.top = b.y + 'px';
+                        b.el.style.transform = `rotate(${b.rotation}deg)`;
+                    }
+                });
+
+                barts = barts.filter(b => !b.isDead);
+
+                if (barts.length === 0 && bartsLeft === 0 && isPlaying) {
+                    endGame();
+                }
+            }
+            animationId = requestAnimationFrame(gameLoop);
+        }
+
+        window.addEventListener('resize', () => {
+            if (isPlaying && !isPaused) createBumpers();
+        });
+    </script>
 </body>
 </html>
